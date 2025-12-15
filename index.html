@@ -1,231 +1,70 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Chat Gemini Test</title>
-    <style>
-        /* Styles CSS (omission pour la concision) */
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 40px auto;
+<script>
+    const API_URL = "https://gpt-backend-kodi.onrender.com/chat"; 
+    const HISTORY_URL = "https://gpt-backend-kodi.onrender.com/history";
+    const ADMIN_CODE = "Admin123"; 
+
+    // *** NOUVELLE LOGIQUE : GESTION DE L'ID UTILISATEUR ***
+    function getUserId() {
+        let userId = localStorage.getItem('chatUserId');
+        if (!userId) {
+            // Créer un ID unique simple (UUID réel serait mieux)
+            userId = 'user-' + Date.now() + Math.floor(Math.random() * 9999);
+            localStorage.setItem('chatUserId', userId);
         }
-        #chat {
-            border: 1px solid #ccc;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        #messages {
-            height: 250px;
-            overflow-y: auto;
-            border: 1px solid #eee;
-            background-color: #f9f9f9;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-        }
-        .message-line {
-            padding: 5px 0;
-        }
-        .user {
-            font-weight: bold;
-            color: #333;
-            text-align: right;
-        }
-        .bot {
-            color: #0066cc;
-            background-color: #e6f0ff;
-            padding: 5px;
-            border-radius: 4px;
-            margin: 5px 0;
-            display: inline-block;
-            max-width: 90%;
-            text-align: left;
-        }
-        .error {
-            color: red;
-            font-style: italic;
-        }
-        #input-container {
-            display: flex;
-            margin-bottom: 10px;
-        }
-        #input {
-            flex-grow: 1;
-            padding: 8px;
-            margin-right: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        button {
-            padding: 8px 15px;
-            background-color: #0066cc;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-right: 5px;
-        }
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        #history-output {
-            margin-top: 10px;
-            white-space: pre-wrap;
-            border: 1px solid #ddd;
-            padding: 10px;
-            background-color: #fff;
-            max-height: 200px;
-            overflow-y: auto;
-            /* Masquer l'historique par défaut */
-            display: none; 
-        }
-    </style>
-</head>
-
-<body>
-
-    <h1>Chat – Test Gemini</h1>
-
-    <div id="chat">
-        <div id="messages"></div>
-
-        <div id="input-container">
-            <input 
-                type="text" 
-                id="input" 
-                placeholder="Écris ton message ici..." 
-                onkeypress="if(event.key === 'Enter') sendMessage()"
-            />
-            <button id="send-button" onclick="sendMessage()">Envoyer</button>
-        </div>
-
-        <div>
-            <button onclick="checkAdminAccess()">Afficher l'Historique (Admin)</button>
-        </div>
-        
-        <div id="history-output">Historique non chargé.</div>
-
-    </div>
-
-    <script>
-        const API_URL = "https://gpt-backend-kodi.onrender.com/chat"; 
-        const HISTORY_URL = "https://gpt-backend-kodi.onrender.com/history";
-        
-        // *** CONFIGURATION ADMIN ***
-        const ADMIN_CODE = "Admin123"; // Le mot de passe administrateur (visible dans le code source !)
-
-        // Fonction pour envoyer le message (aucune modification ici)
-        async function sendMessage() {
-            // ... (logique sendMessage précédente)
-            const input = document.getElementById("input");
-            const sendButton = document.getElementById("send-button");
-            const messagesDiv = document.getElementById("messages");
-            
-            const message = input.value.trim();
-            if (message === "") return;
-
-            sendButton.disabled = true;
-            input.disabled = true;
-
-            messagesDiv.innerHTML += 
-                `<div class="message-line user">Utilisateur : ${message}</div>`;
-
-            input.value = ""; 
-
-            messagesDiv.innerHTML += 
-                `<div id="loading" class="message-line bot">Bot : ... (réponse en cours)</div>`;
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        return userId;
+    }
+    const currentUserId = getUserId(); 
+    console.log("UserID pour cette session:", currentUserId);
 
 
-            try {
-                const response = await fetch(
-                    API_URL,
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({ message })
-                    }
-                );
+    async function sendMessage() {
+        // ... (début de sendMessage inchangé)
 
-                const loadingDiv = document.getElementById("loading");
-                if (loadingDiv) loadingDiv.remove();
+        const message = input.value.trim();
+        if (message === "") return;
 
-                const data = await response.json();
+        // ... (affichage utilisateur et chargement inchangés)
 
-                if (response.ok) {
-                    messagesDiv.innerHTML +=
-                        `<div class="message-line bot">Bot : ${data.reply}</div>`;
-                } else {
-                     messagesDiv.innerHTML +=
-                        `<div class="message-line error">Erreur du serveur (${response.status}) : ${data.reply || 'Problème de connexion.'}</div>`;
+        try {
+            const response = await fetch(
+                API_URL,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ 
+                        message: message,
+                        // *** ENVOYER L'ID UTILISATEUR AU BACKEND ***
+                        userId: currentUserId 
+                    })
                 }
-
-
-            } catch (error) {
-                console.error("Erreur Fetch/Réseau :", error);
-                
-                const loadingDiv = document.getElementById("loading");
-                if (loadingDiv) loadingDiv.remove();
-                
-                messagesDiv.innerHTML +=
-                    `<div class="message-line error">Erreur de connexion : Impossible de joindre le serveur.</div>`;
-            } finally {
-                sendButton.disabled = false;
-                input.disabled = false;
-                input.focus(); 
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }
+            );
+            // ... (suite de la logique inchangée)
+        } catch (error) {
+            // ... (gestion des erreurs inchangée)
+        } finally {
+            // ... (fin de la logique inchangée)
         }
-
-        // *** NOUVELLE FONCTION DE VÉRIFICATION D'ACCÈS ***
-        function checkAdminAccess() {
-            const historyOutput = document.getElementById("history-output");
-            
-            // Masquer d'abord l'historique en cas de tentatives multiples
-            historyOutput.style.display = 'none';
-
-            // Utiliser la fonction prompt() simple pour demander le code
-            const inputCode = prompt("Veuillez entrer le code Administrateur pour voir l'historique.");
-
-            if (inputCode === ADMIN_CODE) {
-                // Si le code est correct, charger l'historique
-                getChatHistory();
-            } else if (inputCode !== null && inputCode !== "") {
-                // Si l'utilisateur a entré un code, mais qu'il est incorrect
-                alert("Code Administrateur incorrect. Accès refusé.");
-            }
-            // Si l'utilisateur clique sur Annuler (inputCode est null), on ne fait rien
-        }
+    }
+    
+    // ... (checkAdminAccess et getChatHistory nécessiteraient des modifications complexes
+    // pour récupérer l'historique de tous les utilisateurs; pour l'instant, nous 
+    // les laissons pour récupérer l'historique de l'utilisateur actuel.)
+    
+    async function getChatHistory() {
+        const historyOutput = document.getElementById("history-output");
+        historyOutput.style.display = 'block'; 
+        historyOutput.innerHTML = "Chargement de l'historique...";
         
-        // Fonction pour récupérer l'historique (appelée uniquement si le code est correct)
-        async function getChatHistory() {
-            const historyOutput = document.getElementById("history-output");
-            
-            // Afficher le conteneur d'historique
-            historyOutput.style.display = 'block'; 
-            historyOutput.innerHTML = "Chargement de l'historique...";
-            
-            try {
-                const response = await fetch(HISTORY_URL);
-                const data = await response.json();
-                
-                if (response.ok && data.history) {
-                    let formattedHistory = JSON.stringify(data.history, null, 2);
-                    historyOutput.innerHTML = `<h3>Historique de la Session:</h3><pre>${formattedHistory}</pre>`;
-                } else {
-                    historyOutput.innerHTML = `Erreur : ${data.history || 'Impossible de charger l\'historique.'}`;
-                }
-            } catch (error) {
-                historyOutput.innerHTML = `Erreur de réseau lors de la récupération de l'historique.`;
-                console.error("Error fetching history:", error);
-            }
+        try {
+            const response = await fetch(`${HISTORY_URL}?userId=${currentUserId}`); // *** ENVOI DE L'ID ***
+            const data = await response.json();
+            // ... (suite de la logique inchangée)
+        } catch (error) {
+             // ... (gestion des erreurs inchangée)
         }
-    </script>
+    }
 
-</body>
-</html>
+    // ... (suite du script inchangée)
+</script>
