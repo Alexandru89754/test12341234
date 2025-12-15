@@ -1,129 +1,164 @@
-<script>
-    const API_URL = "https://gpt-backend-kodi.onrender.com/chat"; 
-    const HISTORY_URL = "https://gpt-backend-kodi.onrender.com/history";
-    const ADMIN_CODE = "Admin123"; 
-
-    // *** NOUVELLE LOGIQUE : GESTION DE L'ID UTILISATEUR ***
-    function getUserId() {
-        let userId = localStorage.getItem('chatUserId');
-        if (!userId) {
-            // Créer un ID unique simple
-            userId = 'user-' + Date.now() + Math.floor(Math.random() * 9999);
-            localStorage.setItem('chatUserId', userId);
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Gemini Persistant</title>
+    <style>
+        /* Styles CSS */
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #f4f4f9;
         }
-        return userId;
-    }
-    const currentUserId = getUserId(); 
-    console.log("UserID pour cette session:", currentUserId);
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        #chat {
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            background-color: white;
+        }
+        #messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .message-line {
+            padding: 5px 0;
+        }
+        .user {
+            font-weight: bold;
+            color: #333;
+            text-align: right;
+            margin-bottom: 10px;
+        }
+        .bot {
+            color: #0066cc;
+            background-color: #e6f0ff;
+            padding: 8px;
+            border-radius: 8px;
+            margin: 5px 0;
+            display: block;
+            max-width: 90%;
+            text-align: left;
+            word-wrap: break-word; /* Important pour les longues réponses */
+        }
+        .error {
+            color: red;
+            font-style: italic;
+        }
+        #input-container {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        #input {
+            flex-grow: 1;
+            padding: 10px;
+            margin-right: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #history-output {
+            margin-top: 15px;
+            white-space: pre-wrap;
+            border: 1px solid #ddd;
+            padding: 15px;
+            background-color: #fff;
+            max-height: 250px;
+            overflow-y: auto;
+            border-radius: 4px;
+            font-size: 14px;
+            display: none; /* Masqué par défaut */
+        }
+        #history-output h3 {
+            margin-top: 0;
+            color: #555;
+        }
+    </style>
+</head>
 
+<body>
 
-    async function sendMessage() {
-        // *** CORRECTION CRITIQUE : DÉCLARATION DES VARIABLES DOM ***
-        const input = document.getElementById("input");
-        const sendButton = document.getElementById("send-button");
-        const messagesDiv = document.getElementById("messages"); 
+    <h1>Chat Persistant avec Gemini</h1>
+
+    <div id="chat">
+        <div id="messages"></div>
+
+        <div id="input-container">
+            <input 
+                type="text" 
+                id="input" 
+                placeholder="Écris ton message ici..." 
+                onkeypress="if(event.key === 'Enter') sendMessage()"
+            />
+            <button id="send-button" onclick="sendMessage()">Envoyer</button>
+        </div>
+
+        <div>
+            <button onclick="checkAdminAccess()">Afficher l'Historique (Admin)</button>
+        </div>
         
-        const message = input.value.trim();
-        if (message === "") return;
+        <div id="history-output">Historique non chargé.</div>
 
-        // Désactiver l'input et le bouton pendant le traitement
-        sendButton.disabled = true;
-        input.disabled = true;
+    </div>
 
-        // 1. Afficher le message de l'utilisateur
-        messagesDiv.innerHTML += 
-            `<div class="message-line user">Utilisateur : ${message}</div>`;
-
-        input.value = ""; 
-
-        // Afficher un indicateur de chargement
-        messagesDiv.innerHTML += 
-            `<div id="loading" class="message-line bot">Bot : ... (réponse en cours)</div>`;
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-
-        try {
-            const response = await fetch(
-                API_URL,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ 
-                        message: message,
-                        // ENVOYER L'ID UTILISATEUR AU BACKEND
-                        userId: currentUserId 
-                    })
-                }
-            );
-
-            // Retirer l'indicateur de chargement
-            const loadingDiv = document.getElementById("loading");
-            if (loadingDiv) loadingDiv.remove();
-
-            const data = await response.json();
-
-            if (response.ok) {
-                messagesDiv.innerHTML +=
-                    `<div class="message-line bot">Bot : ${data.reply}</div>`;
-            } else {
-                 messagesDiv.innerHTML +=
-                    `<div class="message-line error">Erreur du serveur (${response.status}) : ${data.reply || 'Problème de connexion.'}</div>`;
-            }
-
-
-        } catch (error) {
-            console.error("Erreur Fetch/Réseau :", error);
-            
-            const loadingDiv = document.getElementById("loading");
-            if (loadingDiv) loadingDiv.remove();
-            
-            messagesDiv.innerHTML +=
-                `<div class="message-line error">Erreur de connexion : Impossible de joindre le serveur.</div>`;
-        } finally {
-            // Réactiver l'input et le bouton
-            sendButton.disabled = false;
-            input.disabled = false;
-            input.focus(); 
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-    }
-    
-    // Nouvelle fonction de vérification d'accès
-    function checkAdminAccess() {
-        const historyOutput = document.getElementById("history-output");
-        historyOutput.style.display = 'none';
-
-        const inputCode = prompt("Veuillez entrer le code Administrateur pour voir l'historique.");
-
-        if (inputCode === ADMIN_CODE) {
-            getChatHistory();
-        } else if (inputCode !== null && inputCode !== "") {
-            alert("Code Administrateur incorrect. Accès refusé.");
-        }
-    }
-    
-    // Fonction pour récupérer l'historique 
-    async function getChatHistory() {
-        const historyOutput = document.getElementById("history-output");
-        historyOutput.style.display = 'block'; 
-        historyOutput.innerHTML = "Chargement de l'historique...";
+    <script>
+        // *** CONFIGURATION ***
+        const API_URL = "https://gpt-backend-kodi.onrender.com/chat"; 
+        const HISTORY_URL = "https://gpt-backend-kodi.onrender.com/history";
+        const ADMIN_CODE = "Admin123"; // Le code administrateur pour l'accès à l'historique
         
-        try {
-            // ENVOI DE L'ID UTILISATEUR EN PARAMÈTRE D'URL
-            const response = await fetch(`${HISTORY_URL}?userId=${currentUserId}`); 
-            const data = await response.json();
-            
-            if (response.ok && data.history) {
-                let formattedHistory = JSON.stringify(data.history, null, 2);
-                historyOutput.innerHTML = `<h3>Historique de la Session (UserID: ${currentUserId}):</h3><pre>${formattedHistory}</pre>`;
-            } else {
-                historyOutput.innerHTML = `Erreur : ${data.history || 'Impossible de charger l\'historique.'}`;
+        // --- GESTION DE L'ID UTILISATEUR PERSISTANT ---
+        function getUserId() {
+            let userId = localStorage.getItem('chatUserId');
+            if (!userId) {
+                // Créer un ID unique simple et le stocker
+                userId = 'user-' + Date.now() + Math.floor(Math.random() * 9999);
+                localStorage.setItem('chatUserId', userId);
             }
-        } catch (error) {
-            historyOutput.innerHTML = `Erreur de réseau lors de la récupération de l'historique.`;
-            console.error("Error fetching history:", error);
+            return userId;
         }
-    }
-</script>
+        const currentUserId = getUserId(); 
+        console.log("UserID pour cette session:", currentUserId);
+
+
+        async function sendMessage() {
+            // Récupération des éléments DOM (Correction de la ReferenceError)
+            const input = document.getElementById("input");
+            const sendButton = document.getElementById("send-button");
+            const messagesDiv = document.getElementById("messages"); 
+            
+            const message = input.value.trim();
+            if (message === "") return;
+
+            // Verrouiller l'interface pendant l'appel
+            sendButton.disabled = true;
+            input.disabled = true;
+
+            // Afficher le message utilisateur
+            messagesDiv.innerHTML
