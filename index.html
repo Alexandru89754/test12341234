@@ -162,4 +162,100 @@
 
             // Afficher le message utilisateur
             messagesDiv.innerHTML += 
-                `<div class
+                `<div class="message-line user">Utilisateur : ${message}</div>`;
+
+            input.value = ""; 
+
+            // Afficher l'indicateur de chargement
+            messagesDiv.innerHTML += 
+                `<div id="loading" class="message-line bot">Bot : ... (réponse en cours)</div>`;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+
+            try {
+                const response = await fetch(
+                    API_URL,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ 
+                            message: message,
+                            userId: currentUserId 
+                        })
+                    }
+                );
+
+                // Nettoyer l'indicateur de chargement
+                const loadingDiv = document.getElementById("loading");
+                if (loadingDiv) loadingDiv.remove();
+
+                const data = await response.json();
+                
+                // *** CORRECTION CRITIQUE ICI : data.reply est la propriété lue ***
+                if (response.ok) {
+                    messagesDiv.innerHTML +=
+                        `<div class="message-line bot">Bot : ${data.reply}</div>`;
+                } else {
+                     messagesDiv.innerHTML +=
+                        `<div class="message-line error">Erreur du serveur (${response.status}) : ${data.reply || 'Problème de connexion.'}</div>`;
+                }
+
+
+            } catch (error) {
+                console.error("Erreur Fetch/Réseau :", error);
+                
+                const loadingDiv = document.getElementById("loading");
+                if (loadingDiv) loadingDiv.remove();
+                
+                messagesDiv.innerHTML +=
+                    `<div class="message-line error">Erreur de connexion : Impossible de joindre le serveur.</div>`;
+            } finally {
+                // Déverrouiller l'interface
+                sendButton.disabled = false;
+                input.disabled = false;
+                input.focus(); 
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        }
+        
+        // --- LOGIQUE ADMIN POUR L'HISTORIQUE ---
+        function checkAdminAccess() {
+            const historyOutput = document.getElementById("history-output");
+            historyOutput.style.display = 'none';
+
+            const inputCode = prompt("Veuillez entrer le code Administrateur pour voir l'historique.");
+
+            if (inputCode === ADMIN_CODE) {
+                getChatHistory();
+            } else if (inputCode !== null && inputCode !== "") {
+                alert("Code Administrateur incorrect. Accès refusé.");
+            }
+        }
+        
+        async function getChatHistory() {
+            const historyOutput = document.getElementById("history-output");
+            historyOutput.style.display = 'block'; 
+            historyOutput.innerHTML = "Chargement de l'historique...";
+            
+            try {
+                const response = await fetch(`${HISTORY_URL}?userId=${currentUserId}`); 
+                const data = await response.json();
+                
+                if (response.ok && data.history) {
+                    let formattedHistory = JSON.stringify(data.history, null, 2);
+                    historyOutput.innerHTML = 
+                        `<h3>Historique de la Session (UserID: ${currentUserId}):</h3><pre>${formattedHistory}</pre>`;
+                } else {
+                    historyOutput.innerHTML = `Erreur : ${data.history || 'Impossible de charger l\'historique.'}`;
+                }
+            } catch (error) {
+                historyOutput.innerHTML = `Erreur de réseau lors de la récupération de l'historique.`;
+                console.error("Error fetching history:", error);
+            }
+        }
+    </script>
+
+</body>
+</html>
