@@ -1,11 +1,74 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
+    <meta charset="UTF-8">
     <title>Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+        }
+        #chat {
+            border: 1px solid #ccc;
+            padding: 15px;
+        }
+        #messages {
+            height: 250px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .user {
+            font-weight: bold;
+        }
+        .bot {
+            color: #0066cc;
+        }
+    </style>
 </head>
-<Body>
-    <h1>??</h1>
-    <p>Je ne sais pas ce que je fais</p>
-</Body>
 
+<body>
+
+    <h1>Chat – test</h1>
+    <p>Je ne sais pas ce que je fais (mais le chat apparaît 😄)</p>
+
+    <!-- Interface de chat -->
+    <div id="chat">
+        <div id="messages"></div>
+
+        <input 
+            type="text" 
+            id="input" 
+            placeholder="Écris ton message ici..." 
+            style="width: 75%;"
+        />
+        <button onclick="sendMessage()">Envoyer</button>
+    </div>
+
+    <script>
+        function sendMessage() {
+            const input = document.getElementById("input");
+            const message = input.value.trim();
+            if (message === "") return;
+
+            const messagesDiv = document.getElementById("messages");
+
+            // Message utilisateur
+            messagesDiv.innerHTML += 
+                `<p class="user">Utilisateur : ${message}</p>`;
+
+            input.value = "";
+
+            // Réponse fictive du bot (backend viendra plus tard)
+            setTimeout(() => {
+                messagesDiv.innerHTML += 
+                    `<p class="bot">Bot : (réponse simulée)</p>`;
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 500);
+        }
+    </script>
+
+</body>
 </html>
