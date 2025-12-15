@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Chat Gemini Test</title>
     <style>
+        /* Styles CSS (omission pour la concision) */
         body {
             font-family: Arial, sans-serif;
             max-width: 600px;
@@ -48,6 +49,7 @@
         }
         #input-container {
             display: flex;
+            margin-bottom: 10px;
         }
         #input {
             flex-grow: 1;
@@ -63,10 +65,22 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            margin-right: 5px;
         }
         button:disabled {
             background-color: #ccc;
             cursor: not-allowed;
+        }
+        #history-output {
+            margin-top: 10px;
+            white-space: pre-wrap;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #fff;
+            max-height: 200px;
+            overflow-y: auto;
+            /* Masquer l'historique par défaut */
+            display: none; 
         }
     </style>
 </head>
@@ -87,16 +101,25 @@
             />
             <button id="send-button" onclick="sendMessage()">Envoyer</button>
         </div>
+
+        <div>
+            <button onclick="checkAdminAccess()">Afficher l'Historique (Admin)</button>
+        </div>
+        
+        <div id="history-output">Historique non chargé.</div>
+
     </div>
 
     <script>
-        // L'URL de votre backend Render
         const API_URL = "https://gpt-backend-kodi.onrender.com/chat"; 
+        const HISTORY_URL = "https://gpt-backend-kodi.onrender.com/history";
         
-        // Stockage de l'historique de conversation (pour de futures améliorations)
-        // let history = []; 
+        // *** CONFIGURATION ADMIN ***
+        const ADMIN_CODE = "Admin123"; // Le mot de passe administrateur (visible dans le code source !)
 
+        // Fonction pour envoyer le message (aucune modification ici)
         async function sendMessage() {
+            // ... (logique sendMessage précédente)
             const input = document.getElementById("input");
             const sendButton = document.getElementById("send-button");
             const messagesDiv = document.getElementById("messages");
@@ -104,17 +127,14 @@
             const message = input.value.trim();
             if (message === "") return;
 
-            // Désactiver l'input et le bouton pendant le traitement
             sendButton.disabled = true;
             input.disabled = true;
 
-            // 1. Afficher le message de l'utilisateur
             messagesDiv.innerHTML += 
                 `<div class="message-line user">Utilisateur : ${message}</div>`;
 
-            input.value = ""; // Vider l'input
+            input.value = ""; 
 
-            // Afficher un indicateur de chargement
             messagesDiv.innerHTML += 
                 `<div id="loading" class="message-line bot">Bot : ... (réponse en cours)</div>`;
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -128,42 +148,81 @@
                         headers: {
                             "Content-Type": "application/json"
                         },
-                        body: JSON.stringify({ message }) // history, etc.
+                        body: JSON.stringify({ message })
                     }
                 );
 
-                // Retirer l'indicateur de chargement
                 const loadingDiv = document.getElementById("loading");
                 if (loadingDiv) loadingDiv.remove();
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    // 2. Afficher la réponse du bot
                     messagesDiv.innerHTML +=
                         `<div class="message-line bot">Bot : ${data.reply}</div>`;
                 } else {
-                    // 3. Gérer les erreurs de statut HTTP (500, etc.)
                      messagesDiv.innerHTML +=
                         `<div class="message-line error">Erreur du serveur (${response.status}) : ${data.reply || 'Problème de connexion.'}</div>`;
                 }
 
 
             } catch (error) {
-                // 4. Gérer les erreurs de réseau (pas de connexion, CORS, etc.)
                 console.error("Erreur Fetch/Réseau :", error);
                 
                 const loadingDiv = document.getElementById("loading");
                 if (loadingDiv) loadingDiv.remove();
                 
                 messagesDiv.innerHTML +=
-                    `<div class="message-line error">Erreur de connexion : Impossible de joindre le serveur (${API_URL}).</div>`;
+                    `<div class="message-line error">Erreur de connexion : Impossible de joindre le serveur.</div>`;
             } finally {
-                // Réactiver l'input et le bouton
                 sendButton.disabled = false;
                 input.disabled = false;
-                input.focus(); // Remettre le focus sur l'input
+                input.focus(); 
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        }
+
+        // *** NOUVELLE FONCTION DE VÉRIFICATION D'ACCÈS ***
+        function checkAdminAccess() {
+            const historyOutput = document.getElementById("history-output");
+            
+            // Masquer d'abord l'historique en cas de tentatives multiples
+            historyOutput.style.display = 'none';
+
+            // Utiliser la fonction prompt() simple pour demander le code
+            const inputCode = prompt("Veuillez entrer le code Administrateur pour voir l'historique.");
+
+            if (inputCode === ADMIN_CODE) {
+                // Si le code est correct, charger l'historique
+                getChatHistory();
+            } else if (inputCode !== null && inputCode !== "") {
+                // Si l'utilisateur a entré un code, mais qu'il est incorrect
+                alert("Code Administrateur incorrect. Accès refusé.");
+            }
+            // Si l'utilisateur clique sur Annuler (inputCode est null), on ne fait rien
+        }
+        
+        // Fonction pour récupérer l'historique (appelée uniquement si le code est correct)
+        async function getChatHistory() {
+            const historyOutput = document.getElementById("history-output");
+            
+            // Afficher le conteneur d'historique
+            historyOutput.style.display = 'block'; 
+            historyOutput.innerHTML = "Chargement de l'historique...";
+            
+            try {
+                const response = await fetch(HISTORY_URL);
+                const data = await response.json();
+                
+                if (response.ok && data.history) {
+                    let formattedHistory = JSON.stringify(data.history, null, 2);
+                    historyOutput.innerHTML = `<h3>Historique de la Session:</h3><pre>${formattedHistory}</pre>`;
+                } else {
+                    historyOutput.innerHTML = `Erreur : ${data.history || 'Impossible de charger l\'historique.'}`;
+                }
+            } catch (error) {
+                historyOutput.innerHTML = `Erreur de réseau lors de la récupération de l'historique.`;
+                console.error("Error fetching history:", error);
             }
         }
     </script>
