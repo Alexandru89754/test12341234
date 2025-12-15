@@ -34,7 +34,6 @@
     <h1>Chat – test</h1>
     <p>Je ne sais pas ce que je fais (mais le chat apparaît 😄)</p>
 
-    <!-- Interface de chat -->
     <div id="chat">
         <div id="messages"></div>
 
@@ -48,25 +47,41 @@
     </div>
 
     <script>
-        function sendMessage() {
+        async function sendMessage() {
             const input = document.getElementById("input");
             const message = input.value.trim();
             if (message === "") return;
 
             const messagesDiv = document.getElementById("messages");
 
-            // Message utilisateur
-            messagesDiv.innerHTML += 
+            messagesDiv.innerHTML +=
                 `<p class="user">Utilisateur : ${message}</p>`;
 
             input.value = "";
 
-            // Réponse fictive du bot (backend viendra plus tard)
-            setTimeout(() => {
-                messagesDiv.innerHTML += 
-                    `<p class="bot">Bot : (réponse simulée)</p>`;
+            try {
+                const response = await fetch(
+                    "https://gpt-backend-kodi.onrender.com/chat",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ message })
+                    }
+                );
+
+                const data = await response.json();
+
+                messagesDiv.innerHTML +=
+                    `<p class="bot">Bot : ${data.reply}</p>`;
+
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }, 500);
+
+            } catch (error) {
+                messagesDiv.innerHTML +=
+                    `<p class="bot">Bot : Erreur de connexion au serveur</p>`;
+            }
         }
     </script>
 
