@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Test</title>
+    <title>Chat Gemini Test</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,79 +12,161 @@
         #chat {
             border: 1px solid #ccc;
             padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         #messages {
             height: 250px;
             overflow-y: auto;
             border: 1px solid #eee;
+            background-color: #f9f9f9;
             padding: 10px;
             margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .message-line {
+            padding: 5px 0;
         }
         .user {
             font-weight: bold;
+            color: #333;
+            text-align: right;
         }
         .bot {
             color: #0066cc;
+            background-color: #e6f0ff;
+            padding: 5px;
+            border-radius: 4px;
+            margin: 5px 0;
+            display: inline-block;
+            max-width: 90%;
+            text-align: left;
+        }
+        .error {
+            color: red;
+            font-style: italic;
+        }
+        #input-container {
+            display: flex;
+        }
+        #input {
+            flex-grow: 1;
+            padding: 8px;
+            margin-right: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
         }
     </style>
 </head>
 
 <body>
 
-    <h1>Chat – test</h1>
-    <p>Je ne sais pas ce que je fais (mais le chat apparaît 😄)</p>
+    <h1>Chat – Test Gemini</h1>
 
     <div id="chat">
         <div id="messages"></div>
 
-        <input 
-            type="text" 
-            id="input" 
-            placeholder="Écris ton message ici..." 
-            style="width: 75%;"
-        />
-        <button onclick="sendMessage()">Envoyer</button>
+        <div id="input-container">
+            <input 
+                type="text" 
+                id="input" 
+                placeholder="Écris ton message ici..." 
+                onkeypress="if(event.key === 'Enter') sendMessage()"
+            />
+            <button id="send-button" onclick="sendMessage()">Envoyer</button>
+        </div>
     </div>
 
     <script>
+        // L'URL de votre backend Render
+        const API_URL = "https://gpt-backend-kodi.onrender.com/chat"; 
+        
+        // Stockage de l'historique de conversation (pour de futures améliorations)
+        // let history = []; 
+
         async function sendMessage() {
             const input = document.getElementById("input");
+            const sendButton = document.getElementById("send-button");
+            const messagesDiv = document.getElementById("messages");
+            
             const message = input.value.trim();
             if (message === "") return;
 
-            const messagesDiv = document.getElementById("messages");
+            // Désactiver l'input et le bouton pendant le traitement
+            sendButton.disabled = true;
+            input.disabled = true;
 
-            messagesDiv.innerHTML +=
-                `<p class="user">Utilisateur : ${message}</p>`;
+            // 1. Afficher le message de l'utilisateur
+            messagesDiv.innerHTML += 
+                `<div class="message-line user">Utilisateur : ${message}</div>`;
 
-            input.value = "";
+            input.value = ""; // Vider l'input
+
+            // Afficher un indicateur de chargement
+            messagesDiv.innerHTML += 
+                `<div id="loading" class="message-line bot">Bot : ... (réponse en cours)</div>`;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
 
             try {
                 const response = await fetch(
-                    "https://gpt-backend-kodi.onrender.com/chat",
+                    API_URL,
                     {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json"
                         },
-                        body: JSON.stringify({ message })
+                        body: JSON.stringify({ message }) // history, etc.
                     }
                 );
 
+                // Retirer l'indicateur de chargement
+                const loadingDiv = document.getElementById("loading");
+                if (loadingDiv) loadingDiv.remove();
+
                 const data = await response.json();
 
-                messagesDiv.innerHTML +=
-                    `<p class="bot">Bot : ${data.reply}</p>`;
+                if (response.ok) {
+                    // 2. Afficher la réponse du bot
+                    messagesDiv.innerHTML +=
+                        `<div class="message-line bot">Bot : ${data.reply}</div>`;
+                } else {
+                    // 3. Gérer les erreurs de statut HTTP (500, etc.)
+                     messagesDiv.innerHTML +=
+                        `<div class="message-line error">Erreur du serveur (${response.status}) : ${data.reply || 'Problème de connexion.'}</div>`;
+                }
 
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
             } catch (error) {
+                // 4. Gérer les erreurs de réseau (pas de connexion, CORS, etc.)
+                console.error("Erreur Fetch/Réseau :", error);
+                
+                const loadingDiv = document.getElementById("loading");
+                if (loadingDiv) loadingDiv.remove();
+                
                 messagesDiv.innerHTML +=
-                    `<p class="bot">Bot : Erreur de connexion au serveur</p>`;
+                    `<div class="message-line error">Erreur de connexion : Impossible de joindre le serveur (${API_URL}).</div>`;
+            } finally {
+                // Réactiver l'input et le bouton
+                sendButton.disabled = false;
+                input.disabled = false;
+                input.focus(); // Remettre le focus sur l'input
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
         }
     </script>
 
 </body>
 </html>
-
