@@ -1,556 +1,587 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Chat Gemini Persistant</title>
-    <style>
-        /* Styles CSS */
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #f4f4f9;
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-        }
-        #chat {
-            border: 1px solid #ccc;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            background-color: white;
-        }
-        #messages {
-            height: 300px;
-            overflow-y: auto;
-            border: 1px solid #eee;
-            background-color: #f9f9f9;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-        }
-        .message-line {
-            padding: 5px 0;
-        }
-        .user {
-            font-weight: bold;
-            color: #333;
-            text-align: right;
-            margin-bottom: 10px;
-        }
-        .bot {
-            color: #0066cc;
-            background-color: #e6f0ff;
-            padding: 8px;
-            border-radius: 8px;
-            margin: 5px 0;
-            display: block;
-            max-width: 90%;
-            text-align: left;
-            word-wrap: break-word; 
-        }
-        .error {
-            color: red;
-            font-style: italic;
-        }
-        #input-container {
-            display: flex;
-            margin-bottom: 10px;
-        }
-        #input {
-            flex-grow: 1;
-            padding: 10px;
-            margin-right: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        button {
-            padding: 10px 15px;
-            background-color: #0066cc;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        #history-output {
-            margin-top: 15px;
-            white-space: pre-wrap;
-            border: 1px solid #ddd;
-            padding: 15px;
-            background-color: #fff;
-            max-height: 250px;
-            overflow-y: auto;
-            border-radius: 4px;
-            font-size: 14px;
-            display: none; 
-        }
-        #history-output h3 {
-            margin-top: 0;
-            color: #555;
-        }
-    </style>
-</head>
-
-<body>
-
-    <h1>Chat Persistant avec Gemini</h1>
-
-    <div id="chat">
-        <div id="messages"></div>
-
-        <div id="input-container">
-            <input 
-                type="text" 
-                id="input" 
-                placeholder="Écris ton message ici..." 
-                onkeypress="if(event.key === 'Enter') sendMessage()"
-            />
-            <button id="send-button" onclick="sendMessage()">Envoyer</button>
-        </div>
-
-        <div>
-            <button onclick="checkAdminAccess()">Afficher l'Historique (Admin)</button>
-        </div>
-        
-        <div id="history-output">Historique non chargé.</div>
-
-    </div>
-    <title>Simulateur Patient Virtuel</title>
-    <style>
-        :root {
-            color-scheme: light;
-            --bg: #f4f6fb;
-            --card: #ffffff;
-            --text: #1f2933;
-            --muted: #697077;
-            --primary: #2563eb;
-            --primary-dark: #1e40af;
-            --border: #e0e5ec;
-            --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-            --radius: 16px;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: "Inter", "Segoe UI", Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-        }
-
-        .page {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 32px 20px 48px;
-        }
-
-        header {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(37, 99, 235, 0.12);
-            color: var(--primary-dark);
-            padding: 6px 12px;
-            border-radius: 999px;
-            font-size: 13px;
-            font-weight: 600;
-            width: fit-content;
-        }
-
-        h1 {
-            font-size: 32px;
-            margin: 0;
-        }
-
-        .subtitle {
-            font-size: 16px;
-            color: var(--muted);
-            margin: 0;
-            max-width: 740px;
-        }
-
-        .layout {
-            display: grid;
-            grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-            gap: 24px;
-        }
-
-        .card {
-            background: var(--card);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-            padding: 20px;
-        }
-
-        #chat {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            min-height: 520px;
-        }
-
-        #messages {
-            flex: 1;
-            height: 320px;
-            overflow-y: auto;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            background: #f9fafc;
-            padding: 16px;
-        }
-
-        .message-line {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            padding: 8px 0;
-        }
-
-        .message-line.user {
-            align-items: flex-end;
-            text-align: right;
-            font-weight: 600;
-        }
-
-        .message-line.bot {
-            align-items: flex-start;
-            text-align: left;
-        }
-
-        .bubble {
-            padding: 10px 14px;
-            border-radius: 14px;
-            max-width: 85%;
-            line-height: 1.45;
-            word-wrap: break-word;
-        }
-
-        .bubble.user {
-            background: #1f2933;
-            color: #fff;
-        }
-
-        .bubble.bot {
-            background: #e9f2ff;
-            color: #0f172a;
-        }
-
-        .error {
-            color: #b91c1c;
-            background: #fee2e2;
-            padding: 10px 14px;
-            border-radius: 12px;
-            font-size: 14px;
-        }
-
-        #input-container {
-            display: flex;
-            gap: 10px;
-        }
-
-        #input {
-            flex-grow: 1;
-            padding: 12px 14px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            font-size: 15px;
-            background: #fff;
-        }
-
-        #input::placeholder {
-            color: #9aa0a6;
-        }
-
-        button {
-            padding: 12px 18px;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: 600;
-        }
-
-        button:hover {
-            background-color: var(--primary-dark);
-        }
-
-        button:disabled {
-            background-color: #c7c9cc;
-            cursor: not-allowed;
-        }
-
-        .quick-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .quick-actions button {
-            background: #eef2ff;
-            color: #3730a3;
-            border: 1px solid #c7d2fe;
-            font-size: 13px;
-            padding: 8px 12px;
-        }
-
-        .quick-actions button:hover {
-            background: #e0e7ff;
-        }
-
-        .side-section {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .info-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            font-size: 14px;
-            color: var(--muted);
-        }
-
-        .info-list strong {
-            color: var(--text);
-        }
-
-        #history-output {
-            margin-top: 12px;
-            white-space: pre-wrap;
-            border: 1px solid var(--border);
-            padding: 16px;
-            background-color: #fff;
-            max-height: 240px;
-            overflow-y: auto;
-            border-radius: 12px;
-            font-size: 14px;
-            display: none;
-        }
-
-        #history-output h3 {
-            margin-top: 0;
-            color: #475467;
-        }
-
-        @media (max-width: 900px) {
-            .layout {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-    <div class="page">
-        <header>
-            <span class="badge">Simulation clinique interactive</span>
-            <h1>Patient virtuel &amp; feedback pédagogique</h1>
-            <p class="subtitle">
-                Entraînez-vous à conduire un entretien clinique. Posez vos questions, explorez les symptômes,
-                puis demandez un feedback pour améliorer votre approche.
-            </p>
-        </header>
-
-        <div class="layout">
-            <div id="chat" class="card">
-                <div>
-                    <strong>Conversation</strong>
-                    <p class="subtitle">Le patient répond en temps réel. Restez empathique et structuré.</p>
-                </div>
-
-                <div id="messages"></div>
-
-                <div class="quick-actions">
-                    <button type="button" onclick="document.getElementById('input').value='Bonjour, comment vous sentez-vous aujourd’hui ?'">Briser la glace</button>
-                    <button type="button" onclick="document.getElementById('input').value='Pouvez-vous décrire vos symptômes principaux ?'">Explorer les symptômes</button>
-                    <button type="button" onclick="document.getElementById('input').value='Depuis quand cela a commencé ?'">Chronologie</button>
-                    <button type="button" onclick="document.getElementById('input').value='Avez-vous des antécédents médicaux importants ?'">Antécédents</button>
-                </div>
-
-                <div id="input-container">
-                    <input 
-                        type="text" 
-                        id="input" 
-                        placeholder="Écris ton message ici..." 
-                        onkeypress="if(event.key === 'Enter') sendMessage()"
-                    />
-                    <button id="send-button" onclick="sendMessage()">Envoyer</button>
-                </div>
-
-                <div>
-                    <button onclick="checkAdminAccess()">Afficher l'Historique (Admin)</button>
-                </div>
-                
-                <div id="history-output">Historique non chargé.</div>
-            </div>
-
-            <aside class="side-section">
-                <div class="card">
-                    <strong>Objectif de la séance</strong>
-                    <div class="info-list">
-                        <span><strong>1.</strong> Identifier la plainte principale.</span>
-                        <span><strong>2.</strong> Clarifier les symptômes et facteurs de risque.</span>
-                        <span><strong>3.</strong> Résumer et demander le feedback final.</span>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <strong>Conseils d'entretien</strong>
-                    <div class="info-list">
-                        <span>• Utilisez des questions ouvertes.</span>
-                        <span>• Reformulez pour valider la compréhension.</span>
-                        <span>• Explorez l'impact sur la vie quotidienne.</span>
-                        <span>• Concluez par une synthèse claire.</span>
-                    </div>
-                </div>
-            </aside>
-        </div>
-    </div>
-
-    <script>
-        // *** CONFIGURATION ***
-        // Assurez-vous que cette URL est correcte
-        const API_URL = "https://gpt-backend-kodi.onrender.com/chat"; 
-        const HISTORY_URL = "https://gpt-backend-kodi.onrender.com/history";
-        const ADMIN_CODE = "Admin123"; // CHANGEZ CECI POUR PLUS DE SÉCURITÉ
-        
-        // --- GESTION DE L'ID UTILISATEUR PERSISTANT ---
-        function getUserId() {
-            let userId = localStorage.getItem('chatUserId');
-            if (!userId) {
-                userId = 'user-' + Date.now() + Math.floor(Math.random() * 9999);
-                localStorage.setItem('chatUserId', userId);
-            }
-            return userId;
-        }
-        const currentUserId = getUserId(); 
-        console.log("UserID pour cette session:", currentUserId);
-
-
-        async function sendMessage() {
-            // Récupération des éléments DOM 
-            const input = document.getElementById("input");
-            const sendButton = document.getElementById("send-button");
-            const messagesDiv = document.getElementById("messages"); 
-            
-            const message = input.value.trim();
-            if (message === "") return;
-
-            // Verrouiller l'interface
-            sendButton.disabled = true;
-            input.disabled = true;
-
-            // Afficher le message utilisateur
-            messagesDiv.innerHTML += ␍␊
-                `<div class="message-line user">Utilisateur : ${message}</div>`;
-            messagesDiv.innerHTML += ␊
-                `<div class="message-line user"><span class="bubble user">Vous : ${message}</span></div>`;
-
-            input.value = ""; 
-
-            // Afficher l'indicateur de chargement
-            messagesDiv.innerHTML += ␍␊
-                `<div id="loading" class="message-line bot">Bot : ... (réponse en cours)</div>`;
-            messagesDiv.innerHTML += ␊
-                `<div id="loading" class="message-line bot"><span class="bubble bot">Patient : ... (réponse en cours)</span></div>`;
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-
-            try {
-                const response = await fetch(
-                    API_URL,
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({ 
-                            message: message,
-                            userId: currentUserId 
-                        })
-                    }
-                );
-
-                // Nettoyer l'indicateur de chargement
-                const loadingDiv = document.getElementById("loading");
-                if (loadingDiv) loadingDiv.remove();
-
-                const data = await response.json();
-                
-                // *** CORRECTION CRITIQUE ICI : data.reply est la propriété lue ***
-                if (response.ok) {
-                    messagesDiv.innerHTML +=␍␊
-                        `<div class="message-line bot">Bot : ${data.reply}</div>`;
-                } else {␍␊
-                     messagesDiv.innerHTML +=␍␊
-                        `<div class="message-line error">Erreur du serveur (${response.status}) : ${data.reply || 'Problème de connexion.'}</div>`;
-                }␍␊
-                    messagesDiv.innerHTML +=␊
-                        `<div class="message-line bot"><span class="bubble bot">Patient : ${data.reply}</span></div>`;
-                } else {␊
-                     messagesDiv.innerHTML +=␊
-                        `<div class="message-line"><span class="error">Erreur du serveur (${response.status}) : ${data.reply || 'Problème de connexion.'}</span></div>`;
-                }␊
-
-
-            } catch (error) {
-                console.error("Erreur Fetch/Réseau :", error);
-                
-                const loadingDiv = document.getElementById("loading");
-                if (loadingDiv) loadingDiv.remove();
-                
-                messagesDiv.innerHTML +=␍␊
-                    `<div class="message-line error">Erreur de connexion : Impossible de joindre le serveur.</div>`;
-                messagesDiv.innerHTML +=␊
-                    `<div class="message-line"><span class="error">Erreur de connexion : Impossible de joindre le serveur.</span></div>`;
-            } finally {
-                // Déverrouiller l'interface
-                sendButton.disabled = false;
-                input.disabled = false;
-                input.focus(); 
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }
-        }
-        
-        // --- LOGIQUE ADMIN POUR L'HISTORIQUE ---
-        function checkAdminAccess() {
-            const historyOutput = document.getElementById("history-output");
-            historyOutput.style.display = 'none';
-
-            const inputCode = prompt("Veuillez entrer le code Administrateur pour voir l'historique.");
-
-            if (inputCode === ADMIN_CODE) {
-                getChatHistory();
-            } else if (inputCode !== null && inputCode !== "") {
-                alert("Code Administrateur incorrect. Accès refusé.");
-            }
-        }
-        
-        async function getChatHistory() {
-            const historyOutput = document.getElementById("history-output");
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/index.html b/index.html
+index 25c718695912045cf682f91fa2eeca66caa3132c..12aed17b9915b6cc067c89f27da650c46d051ef3 100644
+--- a/index.html
++++ b/index.html
+@@ -1,238 +1,439 @@
+ <!DOCTYPE html>
+ <html lang="fr">
+ <head>
+     <meta charset="UTF-8">
+-    <title>Chat Gemini Persistant</title>
+-    <style>
+-        /* Styles CSS */
+-        body {
+-            font-family: Arial, sans-serif;
+-            max-width: 600px;
+-            margin: 40px auto;
+-            background-color: #f4f4f9;
+-        }
+-        h1 {
+-            color: #333;
+-            text-align: center;
+-        }
+-        #chat {
+-            border: 1px solid #ccc;
+-            padding: 15px;
+-            border-radius: 8px;
+-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+-            background-color: white;
+-        }
+-        #messages {
+-            height: 300px;
+-            overflow-y: auto;
+-            border: 1px solid #eee;
+-            background-color: #f9f9f9;
+-            padding: 10px;
+-            margin-bottom: 10px;
+-            border-radius: 4px;
+-        }
+-        .message-line {
+-            padding: 5px 0;
+-        }
+-        .user {
+-            font-weight: bold;
+-            color: #333;
+-            text-align: right;
+-            margin-bottom: 10px;
+-        }
+-        .bot {
+-            color: #0066cc;
+-            background-color: #e6f0ff;
+-            padding: 8px;
+-            border-radius: 8px;
+-            margin: 5px 0;
+-            display: block;
+-            max-width: 90%;
+-            text-align: left;
+-            word-wrap: break-word; 
+-        }
+-        .error {
+-            color: red;
+-            font-style: italic;
+-        }
+-        #input-container {
+-            display: flex;
+-            margin-bottom: 10px;
+-        }
+-        #input {
+-            flex-grow: 1;
+-            padding: 10px;
+-            margin-right: 5px;
+-            border: 1px solid #ccc;
+-            border-radius: 4px;
+-            font-size: 16px;
+-        }
+-        button {
+-            padding: 10px 15px;
+-            background-color: #0066cc;
+-            color: white;
+-            border: none;
+-            border-radius: 4px;
+-            cursor: pointer;
+-            font-size: 16px;
+-        }
+-        button:hover {
+-            background-color: #0056b3;
+-        }
+-        button:disabled {
+-            background-color: #ccc;
+-            cursor: not-allowed;
+-        }
+-        #history-output {
+-            margin-top: 15px;
+-            white-space: pre-wrap;
+-            border: 1px solid #ddd;
+-            padding: 15px;
+-            background-color: #fff;
+-            max-height: 250px;
+-            overflow-y: auto;
+-            border-radius: 4px;
+-            font-size: 14px;
+-            display: none; 
+-        }
+-        #history-output h3 {
+-            margin-top: 0;
+-            color: #555;
+-        }
+-    </style>
+-</head>
+-
+-<body>
+-
+-    <h1>Chat Persistant avec Gemini</h1>
+-
+-    <div id="chat">
+-        <div id="messages"></div>
+-
+-        <div id="input-container">
+-            <input 
+-                type="text" 
+-                id="input" 
+-                placeholder="Écris ton message ici..." 
+-                onkeypress="if(event.key === 'Enter') sendMessage()"
+-            />
+-            <button id="send-button" onclick="sendMessage()">Envoyer</button>
+-        </div>
+-
+-        <div>
+-            <button onclick="checkAdminAccess()">Afficher l'Historique (Admin)</button>
+-        </div>
+-        
+-        <div id="history-output">Historique non chargé.</div>
+-
+-    </div>
++    <title>Simulateur Patient Virtuel</title>
++    <style>
++        :root {
++            color-scheme: light;
++            --bg: #f4f6fb;
++            --card: #ffffff;
++            --text: #1f2933;
++            --muted: #697077;
++            --primary: #2563eb;
++            --primary-dark: #1e40af;
++            --border: #e0e5ec;
++            --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
++            --radius: 16px;
++        }
++
++        * {
++            box-sizing: border-box;
++        }
++
++        body {
++            margin: 0;
++            font-family: "Inter", "Segoe UI", Arial, sans-serif;
++            background: var(--bg);
++            color: var(--text);
++        }
++
++        .page {
++            max-width: 1100px;
++            margin: 0 auto;
++            padding: 32px 20px 48px;
++        }
++
++        header {
++            display: flex;
++            flex-direction: column;
++            gap: 12px;
++            margin-bottom: 24px;
++        }
++
++        .badge {
++            display: inline-flex;
++            align-items: center;
++            gap: 8px;
++            background: rgba(37, 99, 235, 0.12);
++            color: var(--primary-dark);
++            padding: 6px 12px;
++            border-radius: 999px;
++            font-size: 13px;
++            font-weight: 600;
++            width: fit-content;
++        }
++
++        h1 {
++            font-size: 32px;
++            margin: 0;
++        }
++
++        .subtitle {
++            font-size: 16px;
++            color: var(--muted);
++            margin: 0;
++            max-width: 740px;
++        }
++
++        .layout {
++            display: grid;
++            grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
++            gap: 24px;
++        }
++
++        .card {
++            background: var(--card);
++            border-radius: var(--radius);
++            box-shadow: var(--shadow);
++            border: 1px solid var(--border);
++            padding: 20px;
++        }
++
++        #chat {
++            display: flex;
++            flex-direction: column;
++            gap: 16px;
++            min-height: 520px;
++        }
++
++        #messages {
++            flex: 1;
++            height: 320px;
++            overflow-y: auto;
++            border-radius: 12px;
++            border: 1px solid var(--border);
++            background: #f9fafc;
++            padding: 16px;
++        }
++
++        .message-line {
++            display: flex;
++            flex-direction: column;
++            gap: 6px;
++            padding: 8px 0;
++        }
++
++        .message-line.user {
++            align-items: flex-end;
++            text-align: right;
++            font-weight: 600;
++        }
++
++        .message-line.bot {
++            align-items: flex-start;
++            text-align: left;
++        }
++
++        .bubble {
++            padding: 10px 14px;
++            border-radius: 14px;
++            max-width: 85%;
++            line-height: 1.45;
++            word-wrap: break-word;
++        }
++
++        .bubble.user {
++            background: #1f2933;
++            color: #fff;
++        }
++
++        .bubble.bot {
++            background: #e9f2ff;
++            color: #0f172a;
++        }
++
++        .error {
++            color: #b91c1c;
++            background: #fee2e2;
++            padding: 10px 14px;
++            border-radius: 12px;
++            font-size: 14px;
++        }
++
++        #chat-form {
++            display: flex;
++            gap: 10px;
++        }
++
++        #input {
++            flex-grow: 1;
++            padding: 12px 14px;
++            border: 1px solid var(--border);
++            border-radius: 12px;
++            font-size: 15px;
++            background: #fff;
++        }
++
++        #input::placeholder {
++            color: #9aa0a6;
++        }
++
++        button {
++            padding: 12px 18px;
++            background-color: var(--primary);
++            color: white;
++            border: none;
++            border-radius: 12px;
++            cursor: pointer;
++            font-size: 15px;
++            font-weight: 600;
++        }
++
++        button:hover {
++            background-color: var(--primary-dark);
++        }
++
++        button:disabled {
++            background-color: #c7c9cc;
++            cursor: not-allowed;
++        }
++
++        .quick-actions {
++            display: flex;
++            flex-wrap: wrap;
++            gap: 8px;
++        }
++
++        .quick-actions button {
++            background: #eef2ff;
++            color: #3730a3;
++            border: 1px solid #c7d2fe;
++            font-size: 13px;
++            padding: 8px 12px;
++        }
++
++        .quick-actions button:hover {
++            background: #e0e7ff;
++        }
++
++        .side-section {
++            display: flex;
++            flex-direction: column;
++            gap: 16px;
++        }
++
++        .info-list {
++            display: flex;
++            flex-direction: column;
++            gap: 10px;
++            font-size: 14px;
++            color: var(--muted);
++        }
++
++        .info-list strong {
++            color: var(--text);
++        }
++
++        #history-output {
++            margin-top: 12px;
++            white-space: pre-wrap;
++            border: 1px solid var(--border);
++            padding: 16px;
++            background-color: #fff;
++            max-height: 240px;
++            overflow-y: auto;
++            border-radius: 12px;
++            font-size: 14px;
++            display: none;
++        }
++
++        #history-output h3 {
++            margin-top: 0;
++            color: #475467;
++        }
++
++        @media (max-width: 900px) {
++            .layout {
++                grid-template-columns: 1fr;
++            }
++        }
++    </style>
++</head>
++
++<body>
++
++    <div class="page">
++        <header>
++            <span class="badge">Simulation clinique interactive</span>
++            <h1>Patient virtuel &amp; feedback pédagogique</h1>
++            <p class="subtitle">
++                Entraînez-vous à conduire un entretien clinique. Posez vos questions, explorez les symptômes,
++                puis demandez un feedback pour améliorer votre approche.
++            </p>
++        </header>
++
++        <div class="layout">
++            <div id="chat" class="card">
++                <div>
++                    <strong>Conversation</strong>
++                    <p class="subtitle">Le patient répond en temps réel. Restez empathique et structuré.</p>
++                </div>
++
++                <div id="messages"></div>
++
++                <div class="quick-actions">
++                    <button type="button" class="quick-action" data-prompt="Bonjour, comment vous sentez-vous aujourd’hui ?">Briser la glace</button>
++                    <button type="button" class="quick-action" data-prompt="Pouvez-vous décrire vos symptômes principaux ?">Explorer les symptômes</button>
++                    <button type="button" class="quick-action" data-prompt="Depuis quand cela a commencé ?">Chronologie</button>
++                    <button type="button" class="quick-action" data-prompt="Avez-vous des antécédents médicaux importants ?">Antécédents</button>
++                </div>
++
++                <form id="chat-form">
++                    <input 
++                        type="text" 
++                        id="input" 
++                        placeholder="Écris ton message ici..." 
++                    />
++                    <button id="send-button" type="submit">Envoyer</button>
++                </form>
++
++                <div>
++                    <button id="history-button" type="button">Afficher l'Historique (Admin)</button>
++                </div>
++                
++                <div id="history-output">Historique non chargé.</div>
++            </div>
++
++            <aside class="side-section">
++                <div class="card">
++                    <strong>Objectif de la séance</strong>
++                    <div class="info-list">
++                        <span><strong>1.</strong> Identifier la plainte principale.</span>
++                        <span><strong>2.</strong> Clarifier les symptômes et facteurs de risque.</span>
++                        <span><strong>3.</strong> Résumer et demander le feedback final.</span>
++                    </div>
++                </div>
++
++                <div class="card">
++                    <strong>Conseils d'entretien</strong>
++                    <div class="info-list">
++                        <span>• Utilisez des questions ouvertes.</span>
++                        <span>• Reformulez pour valider la compréhension.</span>
++                        <span>• Explorez l'impact sur la vie quotidienne.</span>
++                        <span>• Concluez par une synthèse claire.</span>
++                    </div>
++                </div>
++            </aside>
++        </div>
++    </div>
+ 
+     <script>
+         // *** CONFIGURATION ***
+         // Assurez-vous que cette URL est correcte
+         const API_URL = "https://gpt-backend-kodi.onrender.com/chat"; 
+         const HISTORY_URL = "https://gpt-backend-kodi.onrender.com/history";
+         const ADMIN_CODE = "Admin123"; // CHANGEZ CECI POUR PLUS DE SÉCURITÉ
+         
+         // --- GESTION DE L'ID UTILISATEUR PERSISTANT ---
+         function getUserId() {
+             let userId = localStorage.getItem('chatUserId');
+             if (!userId) {
+                 userId = 'user-' + Date.now() + Math.floor(Math.random() * 9999);
+                 localStorage.setItem('chatUserId', userId);
+             }
+             return userId;
+         }
+         const currentUserId = getUserId(); 
+         console.log("UserID pour cette session:", currentUserId);
+ 
+ 
+-        async function sendMessage() {
+-            // Récupération des éléments DOM 
+-            const input = document.getElementById("input");
++        document.addEventListener('DOMContentLoaded', () => {
++            const form = document.getElementById("chat-form");
++            const input = document.getElementById("input");
++            const historyButton = document.getElementById("history-button");
++
++            form.addEventListener("submit", (event) => {
++                event.preventDefault();
++                sendMessage();
++            });
++
++            document.querySelectorAll(".quick-action").forEach((button) => {
++                button.addEventListener("click", () => {
++                    input.value = button.dataset.prompt;
++                    input.focus();
++                });
++            });
++
++            historyButton.addEventListener("click", checkAdminAccess);
++        });
++
++        async function sendMessage() {
++            // Récupération des éléments DOM 
++            const input = document.getElementById("input");
+             const sendButton = document.getElementById("send-button");
+             const messagesDiv = document.getElementById("messages"); 
+             
+             const message = input.value.trim();
+             if (message === "") return;
+ 
+             // Verrouiller l'interface
+             sendButton.disabled = true;
+             input.disabled = true;
+ 
+             // Afficher le message utilisateur
+-            messagesDiv.innerHTML += 
+-                `<div class="message-line user">Utilisateur : ${message}</div>`;
++            messagesDiv.innerHTML += 
++                `<div class="message-line user"><span class="bubble user">Vous : ${message}</span></div>`;
+ 
+             input.value = ""; 
+ 
+             // Afficher l'indicateur de chargement
+-            messagesDiv.innerHTML += 
+-                `<div id="loading" class="message-line bot">Bot : ... (réponse en cours)</div>`;
++            messagesDiv.innerHTML += 
++                `<div id="loading" class="message-line bot"><span class="bubble bot">Patient : ... (réponse en cours)</span></div>`;
+             messagesDiv.scrollTop = messagesDiv.scrollHeight;
+ 
+ 
+             try {
+                 const response = await fetch(
+                     API_URL,
+                     {
+                         method: "POST",
+                         headers: {
+                             "Content-Type": "application/json"
+                         },
+                         body: JSON.stringify({ 
+                             message: message,
+                             userId: currentUserId 
+                         })
+                     }
+                 );
+ 
+                 // Nettoyer l'indicateur de chargement
+                 const loadingDiv = document.getElementById("loading");
+                 if (loadingDiv) loadingDiv.remove();
+ 
+                 const data = await response.json();
+                 
+                 // *** CORRECTION CRITIQUE ICI : data.reply est la propriété lue ***
+                 if (response.ok) {
+-                    messagesDiv.innerHTML +=
+-                        `<div class="message-line bot">Bot : ${data.reply}</div>`;
+-                } else {
+-                     messagesDiv.innerHTML +=
+-                        `<div class="message-line error">Erreur du serveur (${response.status}) : ${data.reply || 'Problème de connexion.'}</div>`;
+-                }
++                    messagesDiv.innerHTML +=
++                        `<div class="message-line bot"><span class="bubble bot">Patient : ${data.reply}</span></div>`;
++                } else {
++                     messagesDiv.innerHTML +=
++                        `<div class="message-line"><span class="error">Erreur du serveur (${response.status}) : ${data.reply || 'Problème de connexion.'}</span></div>`;
++                }
+ 
+ 
+             } catch (error) {
+                 console.error("Erreur Fetch/Réseau :", error);
+                 
+                 const loadingDiv = document.getElementById("loading");
+                 if (loadingDiv) loadingDiv.remove();
+                 
+-                messagesDiv.innerHTML +=
+-                    `<div class="message-line error">Erreur de connexion : Impossible de joindre le serveur.</div>`;
++                messagesDiv.innerHTML +=
++                    `<div class="message-line"><span class="error">Erreur de connexion : Impossible de joindre le serveur.</span></div>`;
+             } finally {
+                 // Déverrouiller l'interface
+                 sendButton.disabled = false;
+                 input.disabled = false;
+                 input.focus(); 
+                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
+             }
+         }
+         
+         // --- LOGIQUE ADMIN POUR L'HISTORIQUE ---
+         function checkAdminAccess() {
+             const historyOutput = document.getElementById("history-output");
+             historyOutput.style.display = 'none';
+ 
+             const inputCode = prompt("Veuillez entrer le code Administrateur pour voir l'historique.");
+ 
+             if (inputCode === ADMIN_CODE) {
+                 getChatHistory();
+             } else if (inputCode !== null && inputCode !== "") {
+                 alert("Code Administrateur incorrect. Accès refusé.");
+             }
+         }
+         
+         async function getChatHistory() {
+             const historyOutput = document.getElementById("history-output");
+ 
+EOF
+)
